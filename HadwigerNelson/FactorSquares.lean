@@ -163,10 +163,10 @@ macro_rules
 example : √8 = 2 * √2 := by
   factor_sqrt
 
-lemma factor_sqrt (x : ℕ) [OfNat ℝ x] :
-  let factored := factorSquares x;
-  (√(OfNat.ofNat x) : ℝ) = factored.sqrt * √factored.free.val := by
-  sorry
+-- lemma factor_sqrt (x : ℕ) [OfNat ℝ x] :
+--   let factored := factorSquares x;
+--   (√(OfNat.ofNat x) : ℝ) = factored.sqrt * √factored.free.val := by
+--   sorry
   -- if h : x = 0 then
   --   rw [h]
   --   simp [factorSquares]

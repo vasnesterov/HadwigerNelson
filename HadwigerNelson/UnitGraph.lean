@@ -1,21 +1,11 @@
 import HadwigerNelson.CompGraph
-import Mathlib.Data.Complex.Basic
+import HadwigerNelson.PlaneColorable
 import Mathlib.Tactic
-
-
-def unitDistance (u v : ℂ) : Prop := ‖u - v‖ = 1
-
-def planeColorable (n : ℕ) : Prop := ∃ f : ℂ → Fin n, ∀ u v : ℂ, (unitDistance u v) → f u ≠ f v
-
-lemma neq_of_unit {u v : ℂ} (h : unitDistance u v) : u ≠ v := by
-  by_contra heq
-  rw [heq] at h
-  simp [unitDistance] at h
 
 structure UnitGraph.Edge (vertexes : List ℂ) where
   i : Fin vertexes.length
   j : Fin vertexes.length
-  p : unitDistance vertexes[i] vertexes[j]
+  proof : unitDistance vertexes[i] vertexes[j]
 
 structure UnitGraph where
   vertexes : List ℂ
@@ -58,7 +48,7 @@ def add (g : UnitGraph) (z : ℂ) : UnitGraph where
     assumption
   ⟩
 
-def planeColorable_graph_Colorable {n : ℕ} (h_p_col : planeColorable n) (g : UnitGraph) :
+def graph_Colorable_of_planeColorable {n : ℕ} (h_p_col : planeColorable n) (g : UnitGraph) :
     g.toCompGraph.toSimpleGraph.Colorable n := by
   obtain ⟨val, h_val⟩ := h_p_col
   simp [SimpleGraph.Colorable]
@@ -78,19 +68,7 @@ def planeColorable_graph_Colorable {n : ℕ} (h_p_col : planeColorable n) (g : U
     rw [h] at this
     trivial
 
-example : ¬ planeColorable 1 := by
-  let g : UnitGraph := {
-    vertexes := [0, 1]
-    edges := [⟨⟨0, by decide⟩, ⟨1, by decide⟩, by simp [unitDistance]⟩]
-  }
-  intro h_p_col
-  absurd planeColorable_graph_Colorable h_p_col g
-  apply Noncolorable_from_unsat
-  dsimp [g]
-  apply LitToNat_equisat _
-  clear h_p_col
-  unsat_native_decide
-
+open CompGraph in
 example : ¬ planeColorable 2 := by
   let z : ℂ := 1/2 + Complex.I / 2 * √3
   let g : UnitGraph := {
@@ -102,9 +80,9 @@ example : ¬ planeColorable 2 := by
     ]
   }
   intro h_p_col
-  absurd planeColorable_graph_Colorable h_p_col g
+  absurd graph_Colorable_of_planeColorable h_p_col g
   apply Noncolorable_from_unsat
-  dsimp [g, toCompGraph, CompGraph.ColorablilityCNF]
+  dsimp [g, toCompGraph, ColorablilityCNF]
   apply LitToNat_equisat _
   clear h_p_col
   unsat_native_decide

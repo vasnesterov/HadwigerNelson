@@ -1,14 +1,15 @@
-import LeanSAT
-import Mathlib.Combinatorics.SimpleGraph.Basic
+import HadwigerNelson.UnsatDecide
 import Mathlib.Combinatorics.SimpleGraph.Coloring
 
 structure CompGraph where
   nVertexes : ℕ
   edges : List {x : (Fin nVertexes) × (Fin nVertexes) // x.1 ≠ x.2}
 
+namespace CompGraph
+
 abbrev Lit (n : ℕ) (c : ℕ) := Fin n × Fin c
 
-def CompGraph.ColorablilityCNF (g : CompGraph) (n : ℕ) : CNF <| Lit g.nVertexes n :=
+def ColorablilityCNF (g : CompGraph) (n : ℕ) : CNF <| Lit g.nVertexes n :=
   let vertexesCNF : CNF <| Lit g.nVertexes n :=
     List.finRange g.nVertexes |>.map fun v =>
     List.finRange n |>.map fun c => ((v, c), true)
@@ -20,7 +21,7 @@ def CompGraph.ColorablilityCNF (g : CompGraph) (n : ℕ) : CNF <| Lit g.nVertexe
 def mkEdge {nVertexes : ℕ} (u v : Fin nVertexes) (h : u ≠ v := by decide) :
     {x : (Fin nVertexes) × (Fin nVertexes) // x.1 ≠ x.2} := ⟨(u, v), h⟩
 
-def CompGraph.toSimpleGraph (g : CompGraph) : SimpleGraph (Fin g.nVertexes) :=
+def toSimpleGraph (g : CompGraph) : SimpleGraph (Fin g.nVertexes) :=
   SimpleGraph.fromEdgeSet (g.edges.map fun e => Sym2.mk e.val).toFinset
 
 theorem sat_from_Colorable (g : CompGraph) {n : ℕ} (h_col : g.toSimpleGraph.Colorable n) :
@@ -51,6 +52,7 @@ theorem sat_from_Colorable (g : CompGraph) {n : ℕ} (h_col : g.toSimpleGraph.Co
       tauto
     · assumption
 
+-- for debug
 instance (n : ℕ) (c : ℕ) (x : CNF <| Lit n c) : Decidable x.unsat :=
   inferInstanceAs <| Decidable (∀ f, CNF.eval f x = false)
 
@@ -59,35 +61,6 @@ theorem Noncolorable_from_unsat (g : CompGraph) {n : ℕ}
   by_contra h_col
   obtain ⟨f, _⟩ := sat_from_Colorable g h_col
   simp_all [CNF.sat, h_unsat f]
-
-
-def triangle : CompGraph where
-  nVertexes := 3
-  edges := [mkEdge 0 1, mkEdge 1 2, mkEdge 2 0]
-
--- #eval triangle.ColorablilityCNF 3
-
-def CNF.liftToNat {α : Type} (emb : α → ℕ) (cnf : CNF α) : CNF ℕ :=
-  cnf.map (fun cl => cl.map fun (a, b) => (emb a, b))
-
-theorem lift_equisat {α : Type} [Fintype α] [Inhabited α] {emb : α → ℕ} {cnf : CNF α}
-    (h_inj : emb.Injective) (h_unsat : (CNF.liftToNat emb cnf).unsat) : cnf.unsat := by
-  intro assign
-  simp_all [CNF.unsat, CNF.eval, CNF.liftToNat, List.all_eq]
-  let embInv := Function.invFun emb
-  have h_li : Function.LeftInverse embInv emb := by exact Function.leftInverse_invFun h_inj
-  specialize h_unsat fun x => assign (embInv x)
-  obtain ⟨cl, h_cl_in, h_cl_eval⟩ := h_unsat
-  use cl
-  constructor
-  · assumption
-  simp [CNF.Clause.eval] at *
-  simp [List.any_map] at h_cl_eval
-  simp [List.any_eq] at *
-  intro a ha
-  specialize h_cl_eval a
-  simp [h_li a] at h_cl_eval
-  exact h_cl_eval ha
 
 def LitToNat {n c : ℕ} : Lit n c → ℕ := fun (u, i) => u * c + i
 
@@ -98,7 +71,7 @@ theorem LitToNat_equisat {n c : ℕ} (cnf : CNF <| Lit n c)
     (h_n_pos : n > 0 := by decide) (h_c_pos : c > 0 := by decide)
     : (liftLitCNF cnf).unsat → cnf.unsat := by
   have : Inhabited (Lit n c) := ⟨(⟨0, h_n_pos⟩, ⟨0, h_c_pos⟩)⟩
-  apply lift_equisat
+  apply CNF.lift_equisat
   let NatToLit : ℕ → Lit n c := fun x =>
     if h : x >= n * c then
       default
@@ -131,66 +104,24 @@ theorem LitToNat_equisat {n c : ℕ} (cnf : CNF <| Lit n c)
       · rw [hv]
       · rw [hi]
 
+
+--- examples
+
+private def triangle : CompGraph where
+  nVertexes := 3
+  edges := [mkEdge 0 1, mkEdge 1 2, mkEdge 2 0]
+
+-- #eval triangle.ColorablilityCNF 3
 -- #eval liftLitCNF (triangle.ColorablilityCNF 3)
 
-open BVDecide Lean Meta in
-/--
-Turn an `LratCert` into a proof that some `reflected` expression is UNSAT by providing a `verifier`
-function together with a correctenss theorem for it.
 
-- `verifier` is expected to have type `α → LratCert → Bool`
-- `unsat_of_verifier_eq_true` is expected to have type
-  `∀ (b : α) (c : LratCert), verifier b c = true → unsat b`
--/
-def BVDecide.LratCert.toReflectionProofCNF (cert : LratCert) (cfg : TacticContext) (cnfExpr : Expr)
-    (verifier : Name) (unsat_of_verifier_eq_true : Name)
-    : MetaM Expr := do
-  withTraceNode `sat (fun _ => return "Compiling expr term") do
-    mkAuxDecl cfg.exprDef cnfExpr (mkApp (mkConst ``CNF) (mkConst ``Nat))
+example : ¬ triangle.toSimpleGraph.Colorable 2 := by
+  apply Noncolorable_from_unsat
+  -- decide -- slow
+  apply LitToNat_equisat _
+  unsat_native_decide
 
-  let certType := toTypeExpr LratCert
-
-  withTraceNode `sat (fun _ => return "Compiling proof certificate term") do
-    mkAuxDecl cfg.certDef (toExpr cert) certType
-
-  let cnfExpr := mkConst cfg.exprDef
-  let lratFormulaExpr := mkApp (mkConst ``BVDecide.LratFormula.ofCnf) cnfExpr
-  let certExpr := mkConst cfg.certDef
-
-  withTraceNode `sat (fun _ => return "Compiling reflection proof term") do
-    let auxValue := mkApp2 (mkConst verifier) lratFormulaExpr certExpr
-    mkAuxDecl cfg.reflectionDef auxValue (mkConst ``Bool)
-
-  let nativeProof :=
-    mkApp3
-      (mkConst ``Lean.ofReduceBool)
-      (mkConst cfg.reflectionDef)
-      (toExpr true)
-      (← mkEqRefl (toExpr true))
-  return mkApp3 (mkConst unsat_of_verifier_eq_true) cnfExpr certExpr nativeProof
-
-syntax (name := unsatDecide) "unsat_native_decide" : tactic
-
-open Lean.Elab.Tactic in
-elab_rules : tactic
-  | `(tactic| unsat_native_decide) => do
-    let cfg ← BVDecide.TacticContext.new (← BVDecide.mkTemp)
-    liftMetaFinishingTactic fun g => do
-      let target ← g.getType''
-      if ! (← Lean.Meta.isDefEq target.getAppFn (Lean.mkConst ``CNF.unsat)) then
-        throwError "The goal should be in the form (...).unsat"
-      let args := target.getAppArgs
-      if ! (← Lean.Meta.isDefEq args[0]! (Lean.mkConst ``Nat)) then
-        throwError "CNF type should be Nat"
-      let cnfExpr := args[1]!
-      let t ← Lean.Meta.inferType cnfExpr
-      let cnf ← unsafe Lean.Meta.evalExpr (CNF ℕ) t cnfExpr
-      let res ← BVDecide.runExternal (BVDecide.LratFormula.ofCnf cnf) cfg.solver cfg.lratPath cfg.prevalidate cfg.timeout
-      let cert := res.toOption.get!
-      let proof ← BVDecide.LratCert.toReflectionProofCNF cert cfg cnfExpr ``BVDecide.verifyCert ``BVDecide.verifyCert_correct
-      g.assign proof
-
-def CompGraph.complete (n : ℕ) : CompGraph where
+private def complete (n : ℕ) : CompGraph where
   nVertexes := n
   edges := List.join <| (List.finRange n).map fun i =>
     (List.finRange n).filterMap fun j =>
@@ -199,16 +130,9 @@ def CompGraph.complete (n : ℕ) : CompGraph where
       else
         none
 
-theorem lol : ¬ triangle.toSimpleGraph.Colorable 2 := by
-  apply Noncolorable_from_unsat
-  -- decide -- slow
-  apply LitToNat_equisat _
-  unsat_native_decide
-
-
 -- #eval ((CompGraph.complete 20).ColorablilityCNF 10).length
 
-theorem lool : ¬ (CompGraph.complete 10).toSimpleGraph.Colorable 8 := by
+example : ¬ (CompGraph.complete 10).toSimpleGraph.Colorable 8 := by
   apply Noncolorable_from_unsat
   -- decide -- slow
   apply LitToNat_equisat _

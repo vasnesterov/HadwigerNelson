@@ -61,6 +61,7 @@ macro_rules
       ))
     )
 
+-- TODO: rename me
 def aux (li : List Expr) (type : Expr) : MetaM Expr := do match li with
 | .nil => return ← Meta.mkAppOptM ``List.nil #[type]
 | .cons head tail => return ← Meta.mkAppM ``List.cons #[head, (← aux tail type)]
@@ -76,7 +77,6 @@ def UnitGraph.ofVertexes (vertexes : List Expr) : MetaM <| Expr := do
       let approxDist := getDistance (← Complex.evalToFloat u) (← Complex.evalToFloat v)
       if Float.abs (approxDist - 1) > 1e-5 then
         continue
-      -- dbg_trace "try"
       let finIExpr : Expr := toExpr i
       let finJExpr : Expr := toExpr j
       let mvar_p ← Meta.mkFreshExprMVar <| mkApp2 (mkConst ``unitDistance) u v
@@ -102,7 +102,7 @@ elab "from_vtx" s:str : term => do
   let vertexes ← ParseVtx.parseVtxFile s.getString
   return ← UnitGraph.ofVertexes vertexes
 
-set_option trace.profiler true
+-- set_option trace.profiler true
 
 -- set_option maxHeartbeats 0 in
 -- noncomputable def tri : UnitGraph := from_vtx "vtx/test510.vtx"
