@@ -29,8 +29,10 @@ def parseVertex (vtx : String) : TermElabM Expr := do
 
 def parseVtxFile (vtxPath : System.FilePath) : TermElabM (List Expr) := do
   let mut res := []
-  for vtx in (← IO.FS.readFile vtxPath).splitOn "\n" do
-    res := (← parseVertex vtx) :: res
+  for line in (← IO.FS.readFile vtxPath).splitOn "\n" do
+    if line.isEmpty then
+      continue
+    res := (← parseVertex line) :: res
   return res.reverse
 
 

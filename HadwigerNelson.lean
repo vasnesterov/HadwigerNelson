@@ -3,7 +3,7 @@ import HadwigerNelson.FromVtx
 -- set_option trace.profiler true
 
 -- set_option maxHeartbeats 0 in
-noncomputable def triangle : UnitGraph := from_vtx "vtx/triangle.vtx"
+noncomputable def triangle : UnitGraph := from_vtx "vtx/510.vtx"
 
 open CompGraph UnitGraph in
 example : ¬ planeColorable 2 := by
