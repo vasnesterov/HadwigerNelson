@@ -1,6 +1,6 @@
+import LeanSAT
 import Mathlib.Combinatorics.SimpleGraph.Basic
 import Mathlib.Combinatorics.SimpleGraph.Coloring
-import LeanSAT
 
 structure CompGraph where
   nVertexes : ℕ
@@ -132,6 +132,42 @@ theorem LitToNat_equisat {n c : ℕ} (cnf : CNF <| Lit n c)
       · rw [hi]
 
 -- #eval liftLitCNF (triangle.ColorablilityCNF 3)
+
+open BVDecide Lean Meta in
+/--
+Turn an `LratCert` into a proof that some `reflected` expression is UNSAT by providing a `verifier`
+function together with a correctenss theorem for it.
+
+- `verifier` is expected to have type `α → LratCert → Bool`
+- `unsat_of_verifier_eq_true` is expected to have type
+  `∀ (b : α) (c : LratCert), verifier b c = true → unsat b`
+-/
+def BVDecide.LratCert.toReflectionProofCNF (cert : LratCert) (cfg : TacticContext) (cnfExpr : Expr)
+    (verifier : Name) (unsat_of_verifier_eq_true : Name)
+    : MetaM Expr := do
+  withTraceNode `sat (fun _ => return "Compiling expr term") do
+    mkAuxDecl cfg.exprDef cnfExpr (mkApp (mkConst ``CNF) (mkConst ``Nat))
+
+  let certType := toTypeExpr LratCert
+
+  withTraceNode `sat (fun _ => return "Compiling proof certificate term") do
+    mkAuxDecl cfg.certDef (toExpr cert) certType
+
+  let cnfExpr := mkConst cfg.exprDef
+  let lratFormulaExpr := mkApp (mkConst ``BVDecide.LratFormula.ofCnf) cnfExpr
+  let certExpr := mkConst cfg.certDef
+
+  withTraceNode `sat (fun _ => return "Compiling reflection proof term") do
+    let auxValue := mkApp2 (mkConst verifier) lratFormulaExpr certExpr
+    mkAuxDecl cfg.reflectionDef auxValue (mkConst ``Bool)
+
+  let nativeProof :=
+    mkApp3
+      (mkConst ``Lean.ofReduceBool)
+      (mkConst cfg.reflectionDef)
+      (toExpr true)
+      (← mkEqRefl (toExpr true))
+  return mkApp3 (mkConst unsat_of_verifier_eq_true) cnfExpr certExpr nativeProof
 
 syntax (name := unsatDecide) "unsat_native_decide" : tactic
 

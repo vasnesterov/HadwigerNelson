@@ -1,1 +1,1 @@
-import HadwigerNelson.CompGraph
+import HadwigerNelson.ConstructionNew

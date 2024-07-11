@@ -148,7 +148,9 @@ example : (a + a) - ((a - 3*a)^2 - a / a^5) = -1 := by unfold a; norm_num
 
 example : √3 * √3 = 3 := by norm_num
 
-example : √2 * √3 = √6 := by norm_num
+example : √2 * √3 = √6 := by
+  rw [← Real.sqrt_mul (by simp)]
+  norm_num
 
 
 -- example : 3 * (1 - √2) = 3 - 3 * √2 := by

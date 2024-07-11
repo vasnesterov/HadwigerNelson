@@ -2,11 +2,6 @@ import HadwigerNelson.UnitGraph
 import HadwigerNelson.ParseVtx
 import Qq
 
--- set_option maxRecDepth 600 in
-noncomputable def vertexes : List ℂ := parse_vtx "construction/triangle.vtx"
-
-example : vertexes[1].re = 1 := by rfl
-
 open Lean Meta Qq
 
 partial def Real.evalToFloat (x : Expr) : MetaM Float := do
@@ -120,8 +115,8 @@ elab "from_vtx" s:str : term => do
 
 -- set_option trace.profiler true
 
-set_option maxHeartbeats 0 in
-noncomputable def tri : UnitGraph := from_vtx "construction/test.vtx"
+-- set_option maxHeartbeats 0 in
+-- noncomputable def tri : UnitGraph := from_vtx "vtx/test.vtx"
 
 -- noncomputable def a : ℂ := { re := (6 - √33) / 6, im := 1 / (2 * √3) }
 -- noncomputable def b : ℂ := { re := (7 - √33) / 12, im := (-3 * √3 - √11) / 12 }
