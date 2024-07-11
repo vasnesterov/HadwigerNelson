@@ -133,12 +133,7 @@ def factorSquares (x : ℕ) : FactorSquaresResult x :=
     }
     factorSquaresImp s
 
-#eval (factorSquares 5445).free
-
-
 syntax (name := unsatDecide) "factor_sqrt_aux" : conv
-
-#check Lean.Elab.Tactic.Conv.getLhs
 
 open Lean Meta Elab Tactic Conv Qq in
 elab_rules : conv
@@ -162,9 +157,6 @@ macro_rules
       (repeat conv in Real.sqrt (OfNat.ofNat _) => congr; factor_sqrt_aux);
       (repeat rw [Nat.cast_mul, Nat.cast_pow, Real.sqrt_mul, Real.sqrt_sq]) <;> norm_num
     )
-
-def z : ℝ := (2 : ℕ)^2 * (2 : ℕ)
-#print z
 
 -- example : (OfNat.ofNat 8 : ℝ) = (OfNat.ofNat (2^2 * 2) : ℝ)
 

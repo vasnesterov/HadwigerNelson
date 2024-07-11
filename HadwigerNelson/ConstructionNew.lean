@@ -104,8 +104,8 @@ elab "from_vtx" s:str : term => do
 
 set_option trace.profiler true
 
-set_option maxHeartbeats 0 in
-noncomputable def tri : UnitGraph := from_vtx "vtx/tezt.vtx"
+-- set_option maxHeartbeats 0 in
+-- noncomputable def tri : UnitGraph := from_vtx "vtx/test510.vtx"
 
 -- noncomputable def a : ℂ := { re := 0, im := 0 }
 -- noncomputable def b : ℂ := { re := (-21 - 3 * √5 + 7 * √33 - 3 * √165) / 96, im := (7 * √3 + 21 * √11 - 3 * √15 + 3 * √55) / 96 }
