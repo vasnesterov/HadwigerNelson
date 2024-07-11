@@ -1,6 +1,8 @@
 import Mathlib.Algebra.Squarefree.Basic
 import Mathlib.Tactic
 
+namespace FactorSquares
+
 structure FactorSquaresResult (x : ℕ) where
   free : {x : ℕ // Squarefree x ∨ x = 0}
   sqrt : ℕ
@@ -66,6 +68,7 @@ def factorSquaresStep {x : ℕ} (s : FactorSquaresState x) : FactorSquaresState 
           rwa [show f = s.cur_factor by omega]
     }
 
+@[semireducible]
 def factorSquaresImp {x : ℕ} (s : FactorSquaresState x) : FactorSquaresResult x :=
   if h : s.free < s.cur_factor then
     {
@@ -130,11 +133,68 @@ def factorSquares (x : ℕ) : FactorSquaresResult x :=
     }
     factorSquaresImp s
 
-def kek : {x : ℕ // Squarefree x ∨ x = 0} := ⟨1, by left; simp⟩
+#eval (factorSquares 5445).free
 
-#print axioms kek
 
-#print factorSquaresStep
+syntax (name := unsatDecide) "factor_sqrt_aux" : conv
+
+#check Lean.Elab.Tactic.Conv.getLhs
+
+open Lean Meta Elab Tactic Conv Qq in
+elab_rules : conv
+  | `(conv| factor_sqrt_aux) => do
+    -- dbg_trace (← Lean.Meta.ppExpr (← g.getType''))
+    -- dbg_trace (← getLhs)
+    let num ← unsafe evalExpr ℕ (mkConst ``Nat) (← getLhs).getAppArgs[1]!
+    let ⟨⟨free, _⟩, sqrt, _⟩ := factorSquares num
+    -- dbg_trace s!"{sqrt} {free}"
+    -- if sqrt == 1 then
+    --   failure
+    let freeExpr : Q(ℕ) := toExpr free
+    let sqrtExpr : Q(ℕ) := toExpr sqrt
+    -- dbg_trace freeExpr
+    changeLhs <|← mkAppM' (← mkAppOptM ``Nat.cast #[q(ℝ)]) #[q($sqrtExpr^2 * $freeExpr)]
+
+syntax "factor_sqrt" : tactic
+macro_rules
+| `(tactic| factor_sqrt) =>
+    `(tactic|
+      (repeat conv in Real.sqrt (OfNat.ofNat _) => congr; factor_sqrt_aux);
+      (repeat rw [Nat.cast_mul, Nat.cast_pow, Real.sqrt_mul, Real.sqrt_sq]) <;> norm_num
+    )
+
+def z : ℝ := (2 : ℕ)^2 * (2 : ℕ)
+#print z
+
+-- example : (OfNat.ofNat 8 : ℝ) = (OfNat.ofNat (2^2 * 2) : ℝ)
+
+example : √8 = 2 * √2 := by
+  factor_sqrt
+
+lemma factor_sqrt (x : ℕ) [OfNat ℝ x] :
+  let factored := factorSquares x;
+  (√(OfNat.ofNat x) : ℝ) = factored.sqrt * √factored.free.val := by
+  sorry
+  -- if h : x = 0 then
+  --   rw [h]
+  --   simp [factorSquares]
+  -- else
+  --   rw [Real.sqrt_eq_iff_sq_eq]
+  --   · ring_nf
+  --     rw [Real.sq_sqrt (Nat.cast_nonneg' (factorSquares x).free)]
+  --     rw [← Nat.cast_pow, ← Nat.cast_mul, Nat.cast_inj]
+  --     have := (factorSquares x).correct_prod.symm
+  --     ring_nf at this
+  --     assumption
+  --   · apply Nat.cast_nonneg'
+  --   · sorry
+
+-- example : √8 = 2 * √2 := by
+--   rw [factor_sqrt]
+--   repeat conv in factorSquares _ => reduce
+--   dsimp only
+
+end FactorSquares
 
 ------------------------------------------
 

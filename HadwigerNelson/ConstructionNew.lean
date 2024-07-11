@@ -1,5 +1,6 @@
 import HadwigerNelson.UnitGraph
 import HadwigerNelson.ParseVtx
+import HadwigerNelson.FactorSquares
 import Qq
 
 open Lean Meta Qq
@@ -46,20 +47,6 @@ def getDistance (x y : Float × Float) : Float :=
   let b := x.2 - y.2
   a^2 + b^2
 
--- set_option trace.profiler true
-
--- run_elab
---   let vertexes ← ParseVtx.parseVtxFile "construction/test.vtx"
---   let mut cnt : ℕ := 0
---   for (u, i) in vertexes.zip (List.finRange vertexes.length) do
---     for (v, j) in vertexes.zip (List.finRange vertexes.length) do
---       if j <= i then
---         continue
---       let approxDist := getDistance (← Complex.evalToFloat u) (← Complex.evalToFloat v)
---       if Float.abs (approxDist - 1) < 1e-5 then
---         cnt := cnt + 1
---   dbg_trace cnt
-
 syntax "theta_calc" : tactic
 macro_rules
 | `(tactic| theta_calc) =>
@@ -68,8 +55,10 @@ macro_rules
       repeat (fail_if_no_progress (
         ring_nf <;>
         norm_num <;>
-        try (rw [← Real.sqrt_mul (by simp)]; norm_num) <;>
-        try rw [← Real.sqrt_div_self]))
+        (try (rw [← Real.sqrt_mul (by simp)]; norm_num)) <;>
+        factor_sqrt <;>
+        (try (rw [← Real.sqrt_div_self]; norm_num))
+      ))
     )
 
 def aux (li : List Expr) (type : Expr) : MetaM Expr := do match li with
@@ -113,26 +102,18 @@ elab "from_vtx" s:str : term => do
   let vertexes ← ParseVtx.parseVtxFile s.getString
   return ← UnitGraph.ofVertexes vertexes
 
--- set_option trace.profiler true
+set_option trace.profiler true
 
--- set_option maxHeartbeats 0 in
--- noncomputable def tri : UnitGraph := from_vtx "vtx/test.vtx"
+set_option maxHeartbeats 0 in
+noncomputable def tri : UnitGraph := from_vtx "vtx/tezt.vtx"
 
--- noncomputable def a : ℂ := { re := (6 - √33) / 6, im := 1 / (2 * √3) }
--- noncomputable def b : ℂ := { re := (7 - √33) / 12, im := (-3 * √3 - √11) / 12 }
+-- noncomputable def a : ℂ := { re := 0, im := 0 }
+-- noncomputable def b : ℂ := { re := (-21 - 3 * √5 + 7 * √33 - 3 * √165) / 96, im := (7 * √3 + 21 * √11 - 3 * √15 + 3 * √55) / 96 }
+
+-- set_option maxRecDepth 500 in
 -- example : unitDistance a b := by
 --   unfold a b
 --   theta_calc
-
-  -- rw [sqrt_inv] <;> try norm_num
-  -- theta_calc
-  -- simp [unitDistance, Complex.abs, Complex.normSq];
-  -- repeat (fail_if_no_progress (ring_nf <;> norm_num <;> try (rw [← Real.sqrt_mul (by simp)]; norm_num)))
-  -- ring_nf; norm_num; try (rw [← Real.sqrt_mul (by simp)]; norm_num)
-
-
-
-
 
 
 

@@ -18,30 +18,52 @@ example : (factorSquares 7).sqrt = 1 := by rfl
 
 #reduce (factorSquares 8).free.val
 
-@[simp]
-lemma factor_sqrt (x : ℕ) :
-  let factored := factorSquares x;
-  (√x : ℝ) = factored.sqrt * Real.sqrt factored.free := by
-  if h : x = 0 then
-    rw [h]
-    simp [factorSquares]
-  else
-    rw [Real.sqrt_eq_iff_sq_eq]
-    · ring_nf
-      rw [Real.sq_sqrt (Nat.cast_nonneg' (factorSquares x).free)]
-      rw [← Nat.cast_pow, ← Nat.cast_mul, Nat.cast_inj]
-      have := (factorSquares x).correct_prod.symm
-      ring_nf at this
-      assumption
-    · apply Nat.cast_nonneg'
-    · sorry
+def complexFunction (x : ℕ) : ℕ := x^2
 
+example : complexFunction 2 = 4 := by
+  reduce
+
+lemma factor_sqrt (x : ℕ) {y z : ℕ}
+    (hy : y = (factorSquares x).sqrt := by rfl) (hz : z = (factorSquares x).free := by rfl) :
+  (√x : ℝ) = y * √z := by
+  sorry
+  -- if h : x = 0 then
+  --   rw [h]
+  --   simp [factorSquares]
+  -- else
+  --   rw [Real.sqrt_eq_iff_sq_eq]
+  --   · ring_nf
+  --     rw [Real.sq_sqrt (Nat.cast_nonneg' (factorSquares x).free)]
+  --     rw [← Nat.cast_pow, ← Nat.cast_mul, Nat.cast_inj]
+  --     have := (factorSquares x).correct_prod.symm
+  --     ring_nf at this
+  --     assumption
+  --   · apply Nat.cast_nonneg'
+  --   · sorry
+
+lemma factor_sqrt_fast (x : ℕ) :
+  let factored := factorSquaresFast' x;
+  (√x : ℝ) = factored.1 * √factored.2 := by
+  sorry
+
+example : (factorSquares 4).free.val = 1 := by
+  reduce
+
+set_option maxRecDepth 1000 in
 example : (√(8 : ℕ) : ℝ) = 2 * √2 := by
   rw [factor_sqrt]
+  repeat (conv in factorSquares _ =>
+    reduce)
+  dsimp only
+  -- simp [factorSquares, factorSquaresImp, factorSquaresStep]
+
 
   -- rw [sqrt_mul_sqrt 8]
 
+#print factorial
 
+
+#help tactic
 ---------------------------------------------------------------------------------------------
 
 theorem sqrt_pow_even {x : ℝ} {n : ℕ} (h : 0 ≤ x) : √x ^ (n*2) = x^n := by
@@ -90,57 +112,10 @@ theorem I_pow {n : ℕ} : Complex.I^n = (-1)^(n / 2) * Complex.I^(n % 2) := by
 
 ----------------------------------------------------------------------------------------------------
 
+open Lean Meta Elab Tactic
 
--- /-- The `norm_num` extension which identifies expressions of the form `a + b`,
--- such that `norm_num` successfully recognises both `a` and `b`. -/
--- @[norm_num Real.sqrt _ * Real.sqrt _] def evalSqrtMulSqrt : NormNumExt where eval {u α} e := do
---   let .app (.app (f : Q($α → $α → $α)) (a : Q($α))) (b : Q($α)) ← whnfR e | failure
---   let ra ← derive a; let rb ← derive b
---   match ra, rb with
---   | .isBool .., _ | _, .isBool .. => failure
---   | .isNat _ .., .isNat _ .. | .isNat _ .., .isNegNat _ .. | .isNat _ .., .isRat _ ..
---   | .isNegNat _ .., .isNat _ .. | .isNegNat _ .., .isNegNat _ .. | .isNegNat _ .., .isRat _ ..
---   | .isRat _ .., .isNat _ .. | .isRat _ .., .isNegNat _ .. | .isRat _ .., .isRat _ .. =>
---     guard <|← withNewMCtxDepth <| isDefEq f q(HAdd.hAdd (α := $α))
---   let rec
---   /-- Main part of `evalAdd`. -/
---   core : Option (Result e) := do
---     let rec intArm (rα : Q(Ring $α)) := do
---       haveI' : $e =Q $a + $b := ⟨⟩
---       let ⟨za, na, pa⟩ ← ra.toInt _; let ⟨zb, nb, pb⟩ ← rb.toInt _
---       haveI' : $f =Q HAdd.hAdd := ⟨⟩
---       let zc := za + zb
---       have c := mkRawIntLit zc
---       haveI' : Int.add $na $nb =Q $c := ⟨⟩
---       return .isInt rα c zc q(isInt_add (f := $f) (.refl $f) $pa $pb (.refl $c))
---     let rec ratArm (dα : Q(DivisionRing $α)) : Option (Result _) := do
---       haveI' : $e =Q $a + $b := ⟨⟩
---       haveI' : $f =Q HAdd.hAdd := ⟨⟩
---       let ⟨qa, na, da, pa⟩ ← ra.toRat' dα; let ⟨qb, nb, db, pb⟩ ← rb.toRat' dα
---       let qc := qa + qb
---       let dd := qa.den * qb.den
---       let k := dd / qc.den
---       have t1 : Q(ℤ) := mkRawIntLit (k * qc.num)
---       have t2 : Q(ℕ) := mkRawNatLit dd
---       have nc : Q(ℤ) := mkRawIntLit qc.num
---       have dc : Q(ℕ) := mkRawNatLit qc.den
---       have k : Q(ℕ) := mkRawNatLit k
---       let r1 : Q(Int.add (Int.mul $na $db) (Int.mul $nb $da) = Int.mul $k $nc) :=
---         (q(Eq.refl $t1) : Expr)
---       let r2 : Q(Nat.mul $da $db = Nat.mul $k $dc) := (q(Eq.refl $t2) : Expr)
---       return .isRat' dα qc nc dc q(isRat_add (f := $f) (.refl $f) $pa $pb $r1 $r2)
---     match ra, rb with
---     | .isBool .., _ | _, .isBool .. => failure
---     | .isRat dα .., _ | _, .isRat dα .. => ratArm dα
---     | .isNegNat rα .., _ | _, .isNegNat rα .. => intArm rα
---     | .isNat _ na pa, .isNat sα nb pb =>
---       haveI' : $e =Q $a + $b := ⟨⟩
---       haveI' : $f =Q HAdd.hAdd := ⟨⟩
---       assumeInstancesCommute
---       have c : Q(ℕ) := mkRawNatLit (na.natLit! + nb.natLit!)
---       haveI' : Nat.add $na $nb =Q $c := ⟨⟩
---       return .isNat sα c q(isNat_add (f := $f) (.refl $f) $pa $pb (.refl $c))
---   core
+#check Lean.Meta.Rewrite.Config
+
 
 def a : ℝ := 1
 

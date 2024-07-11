@@ -171,7 +171,7 @@ def BVDecide.LratCert.toReflectionProofCNF (cert : LratCert) (cfg : TacticContex
 
 syntax (name := unsatDecide) "unsat_native_decide" : tactic
 
-open Lean.Elab.Tactic
+open Lean.Elab.Tactic in
 elab_rules : tactic
   | `(tactic| unsat_native_decide) => do
     let cfg ← BVDecide.TacticContext.new (← BVDecide.mkTemp)
