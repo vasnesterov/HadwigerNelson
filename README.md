@@ -13,7 +13,7 @@ set_option sat.solver <YOUR_SAT_SOLVER_COMMAND>
 
 ## Usage
 Run `lake exe cache get` to load Mathlib cache, then build the project with `lake build`. 
-Note that it requires more than 32GB RAM and about 3 hours to build. I hope to speed up it in the future.
+Note that it requires more than 40GB RAM and about 3 hours to build. I hope to speed up it in the future.
 
 ## Proof overview
 We use a standard approach to prove the statement:
@@ -23,7 +23,7 @@ We use a standard approach to prove the statement:
 4. Reduce colorability of the plane to colorability of finite unit distance graphs and finish the proof.
 
 ### Building edges
-To find edges of the graph we cast vertexes' coordinates to `Float` and check whether distance between two given point are close enough to 1. If so, we run the tactic `build_edge` that combines `norm_num`, `ring_nf` and some extra rewriting of square roots.
+To find edges of the graph we cast vertexes' coordinates to `Float` and check whether distance between two given points are close enough to 1. If so, we run the tactic `build_edge` that combines `norm_num`, `ring_nf` and some extra rewriting of square roots.
 
 So far, the tactic succesfully proves equalities involving numbers which are linear combination of square roots of naturals over rationals. It it enough to build all edges of 510-vertex Heule's graph. Unfortunately, the smallest known non-4-colorable unit distance graph constructed by Jaan Parts is so far beyound of the `build_edge` abilities, because it contains numbers like `Sqrt[(5*(7 + Sqrt[33]))/2]`.
 
