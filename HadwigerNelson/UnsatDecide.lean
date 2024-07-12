@@ -1,13 +1,36 @@
+/-
+Copyright (c) 2024 Vasily Nesterov. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Vasily Nesterov
+-/
 import LeanSAT
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Tactic.Use
+
+/-!
+# `unsat_decide` tactic
+
+In this file we use LeanSAT API to write `unsat_decide` tactic that proves goals of the form
+`(...).unsat`.
+
+## Main declarations
+
+* `lift_equisat`: injective lifting from some finite type to `ℕ` preserve unsatisfability of CNFs.
+* `unsat_decide` tactic proves goals of the form `(...).unsat`.
+
+## Implementation notes
+
+Note that so far LeanSAT requires the `ofReduceBool` axiom which means that we have to trust the
+entire Lean compiler.
+-/
+
 
 namespace CNF
 
 def liftToNat {α : Type} (emb : α → ℕ) (cnf : CNF α) : CNF ℕ :=
   cnf.map (fun cl => cl.map fun (a, b) => (emb a, b))
 
-theorem lift_equisat {α : Type} [Fintype α] [Inhabited α] {emb : α → ℕ} {cnf : CNF α}
+theorem unsat_of_liftToNat_unsat {α : Type} [Fintype α] [Inhabited α] {emb : α → ℕ} {cnf : CNF α}
     (h_inj : emb.Injective) (h_unsat : (liftToNat emb cnf).unsat) : cnf.unsat := by
   intro assign
   simp_all [unsat, eval, liftToNat, List.all_eq]
@@ -29,14 +52,8 @@ theorem lift_equisat {α : Type} [Fintype α] [Inhabited α] {emb : α → ℕ} 
 end CNF
 
 open BVDecide Lean Meta
-/--
-Turn an `LratCert` into a proof that some `reflected` expression is UNSAT by providing a `verifier`
-function together with a correctenss theorem for it.
 
-- `verifier` is expected to have type `α → LratCert → Bool`
-- `unsat_of_verifier_eq_true` is expected to have type
-  `∀ (b : α) (c : LratCert), verifier b c = true → unsat b`
--/
+/-- The version of `BVDecide.LratCert.toReflectionProof` for CNFs. -/
 def BVDecide.LratCert.toReflectionProofCNF (cert : LratCert) (cfg : TacticContext) (cnfExpr : Expr)
     (verifier : Name) (unsat_of_verifier_eq_true : Name)
     : MetaM Expr := do
@@ -64,11 +81,12 @@ def BVDecide.LratCert.toReflectionProofCNF (cert : LratCert) (cfg : TacticContex
       (← mkEqRefl (toExpr true))
   return mkApp3 (mkConst unsat_of_verifier_eq_true) cnfExpr certExpr nativeProof
 
-syntax (name := unsatDecide) "unsat_native_decide" : tactic
+syntax (name := unsatDecide) "unsat_decide" : tactic
 
 open Lean.Elab.Tactic in
+/-- Proves goals of the form `(...).unsat` -/
 elab_rules : tactic
-  | `(tactic| unsat_native_decide) => do
+  | `(tactic| unsat_decide) => do
     let cfg ← TacticContext.new (← mkTemp)
     liftMetaFinishingTactic fun g => do
       let target ← g.getType''

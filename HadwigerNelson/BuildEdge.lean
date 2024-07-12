@@ -1,7 +1,26 @@
-import HadwigerNelson.UnitGraph
-import HadwigerNelson.ParseVtx
+/-
+Copyright (c) 2024 Vasily Nesterov. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Vasily Nesterov
+-/
 import HadwigerNelson.FactorSquares
+import HadwigerNelson.ParseVtx
+import HadwigerNelson.UnitGraph
 import Qq
+
+/-!
+# `build_edge` tactic
+
+In this file we implement `build_edge` tactic and `from_vtx` elaboration rule.
+
+## Main declarations
+
+* `Real.evalToFloat`: evaluates some expressions of type `ℝ` to `Float`. We use it to filter pairs
+  of vertexes that are likely at unit distance from each other.
+* `build_edge`: tactic that proves `unitDistance u v` for fixed `u` and `v`. It successfully proves
+  it for number which are linear combination of square roots of naturals over rationals.
+* `from_vtx`: constructs a unit distance graph from `.vtx` file.
+-/
 
 open Lean Meta Qq
 
@@ -61,12 +80,8 @@ macro_rules
       ))
     )
 
-def Meta.mkList (li : List Expr) (type : Expr) : MetaM Expr := do match li with
-| .nil => return ← Meta.mkAppOptM ``List.nil #[type]
-| .cons head tail => return ← Meta.mkAppM ``List.cons #[head, (← Meta.mkList tail type)]
-
 def UnitGraph.ofVertexes (vertexes : List Expr) : MetaM <| Expr := do
-  let vertexesExpr : Expr := ← Meta.mkList vertexes q(ℂ)
+  let vertexesExpr : Expr := ← mkListLit q(ℂ) vertexes
   let mut edges : List Expr := []
 
   for (u, i) in vertexes.zip (List.finRange vertexes.length) do
@@ -78,7 +93,7 @@ def UnitGraph.ofVertexes (vertexes : List Expr) : MetaM <| Expr := do
         continue
       let finIExpr : Expr := toExpr i
       let finJExpr : Expr := toExpr j
-      let mvar_p ← Meta.mkFreshExprMVar <| mkApp2 (mkConst ``unitDistance) u v
+      let mvar_p ← mkFreshExprMVar <| mkApp2 (mkConst ``unitDistance) u v
       let p := mvar_p.mvarId!
       let edgeExpr : Option Expr ← p.withContext do
         let lolq := Lean.Elab.Tactic.run p (Lean.Elab.Tactic.evalTactic (← `(tactic| build_edge)))
@@ -95,7 +110,8 @@ def UnitGraph.ofVertexes (vertexes : List Expr) : MetaM <| Expr := do
         edges := edgeExpr.get! :: edges
 
   dbg_trace s!"Built {edges.length} edges"
-  return mkApp2 (mkConst ``UnitGraph.mk) vertexesExpr (← Meta.mkList edges (mkApp (mkConst ``UnitGraph.Edge) vertexesExpr))
+  return mkApp2 (mkConst ``UnitGraph.mk) vertexesExpr
+    (← mkListLit (mkApp (mkConst ``UnitGraph.Edge) vertexesExpr) edges)
 
 elab "from_vtx" s:str : term => do
   let vertexes ← ParseVtx.parseVtxFile s.getString

@@ -1,8 +1,25 @@
+/-
+Copyright (c) 2024 Vasily Nesterov. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Vasily Nesterov
+-/
 import Lean
 import Mathlib.Data.Real.Sqrt
 import Mathlib.Data.Complex.Basic
 
-open Lean Elab Term
+/-!
+# Parsing .vtx
+
+In this file we parse `.vtx` file.
+
+## Main declarations
+
+* `parseVtxFile`: creates `List Expr` representing vertexes from `.vtx` file.
+* `parse_vtx` elab rule: creates `List ℂ` of vertexes from `.vtx` file.
+-/
+
+
+open Lean Meta Elab Term
 
 namespace ParseVtx
 
@@ -35,12 +52,13 @@ def parseVtxFile (vtxPath : System.FilePath) : TermElabM (List Expr) := do
     res := (← parseVertex line) :: res
   return res.reverse
 
+-- def aux (li : List Expr) (type : Expr) : MetaM Expr := do match li with
+-- | .nil => return ← Meta.mkAppOptM ``List.nil #[type]
+-- | .cons head tail => return ← Meta.mkAppM ``List.cons #[head, (← aux tail type)]
 
-def aux (li : List Expr) (type : Expr) : MetaM Expr := do match li with
-| .nil => return ← Meta.mkAppOptM ``List.nil #[type]
-| .cons head tail => return ← Meta.mkAppM ``List.cons #[head, (← aux tail type)]
 
+/-- Creates `List ℂ` from `.vtx` file. -/
 elab "parse_vtx" s:str : term => do
-  return ← aux (← parseVtxFile s.getString) (mkConst ``Complex)
+  return ← mkListLit (mkConst ``Complex) (← parseVtxFile s.getString)
 
 end ParseVtx

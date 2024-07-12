@@ -1,5 +1,29 @@
+/-
+Copyright (c) 2024 Vasily Nesterov. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Vasily Nesterov
+-/
 import Mathlib.Algebra.Squarefree.Basic
-import Mathlib.Tactic
+import Mathlib.Data.Real.Sqrt
+import Mathlib.Tactic.Qify
+
+/-!
+# Factoring squares
+
+In this file we implement a verified procedure of factoring squares, i.e. decomposing the natural
+number `x` as `y * z^2` where `y` is square-free.
+
+## Main declarations
+
+* `factorSquares`: factors `x = y * z^2` where `y` is square-free.
+* `factor_sqrt` tactic replaces `√x` with `z * √y` where `y` is square-free.
+
+## Implementation notes
+
+Unfortunately, we was not able to use the proved correctness of the procedure in the main proof,
+because reducing WF-based function `factorSquares` is extremely inefficient.
+-/
+
 
 namespace FactorSquares
 
@@ -37,22 +61,22 @@ def factorSquaresStep {x : ℕ} (s : FactorSquaresState x) : FactorSquaresState 
       cur_factor := s.cur_factor
       cur_factor_pos := s.cur_factor_pos
       correct_prod := by
-        have kek := s.correct_prod
+        have correct_prod := s.correct_prod
         have := s.cur_factor_pos
         generalize s.free = a at *
         generalize s.sqrt = b at *
         generalize s.cur_factor = c at *
-        rw [kek]
+        rw [correct_prod]
         obtain ⟨d, hd⟩ := hdiv
         rw [hd]
         qify; field_simp; ring
       correct_free := by
         intro f f_lb f_ub
-        have kek := s.correct_free f f_lb f_ub
+        have correct_free := s.correct_free f f_lb f_ub
         have := s.cur_factor_pos
-        contrapose! kek
-        -- separate lemma dvd_of_mul_left_dvd
-        obtain ⟨c, hc⟩ := kek
+        contrapose! correct_free
+        -- this should be a separate lemma `dvd_of_mul_left_dvd`
+        obtain ⟨c, hc⟩ := correct_free
         use c * (s.cur_factor ^ 2)
         qify at *; field_simp at *; rw [hc]; ring_nf
     }
@@ -81,9 +105,8 @@ def factorSquaresImp {x : ℕ} (s : FactorSquaresState x) : FactorSquaresResult 
           · apply Nat.le_mul_self
           · apply Nat.le_of_dvd <| Nat.zero_lt_of_ne_zero s.free_nz
             assumption
-        have kek := s.correct_free
         by_contra f_neq_1
-        apply kek f
+        apply (s.correct_free) f
         · by_contra! f_lt_2
           have f_lt_1 : f < 1 := Nat.lt_of_le_of_ne (Nat.le_of_lt_succ f_lt_2) f_neq_1
           have f_eq_0 : f = 0 := by simp_all only [ne_eq, Nat.lt_one_iff]
@@ -136,6 +159,7 @@ def factorSquares (x : ℕ) : FactorSquaresResult x :=
 syntax "factor_sqrt_aux" : conv
 
 open Lean Meta Elab Tactic Conv Qq in
+/-- Conversion mode tactic that replaces `x` with `z^2 * y` where `y` is square-free. -/
 elab_rules : conv
   | `(conv| factor_sqrt_aux) => do
     let num ← unsafe evalExpr ℕ (mkConst ``Nat) (← getLhs).getAppArgs[1]!
@@ -144,6 +168,7 @@ elab_rules : conv
     let sqrtExpr : Q(ℕ) := toExpr sqrt
     changeLhs <|← mkAppM' (← mkAppOptM ``Nat.cast #[q(ℝ)]) #[q($sqrtExpr^2 * $freeExpr)]
 
+/-- Replaces `√x` with `z * √y` where `y` is square-free and `z` is a square. -/
 syntax "factor_sqrt" : tactic
 macro_rules
 | `(tactic| factor_sqrt) =>

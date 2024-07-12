@@ -1,6 +1,22 @@
+/-
+Copyright (c) 2024 Vasily Nesterov. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Vasily Nesterov
+-/
 import HadwigerNelson.CompGraph
-import HadwigerNelson.PlaneColorable
-import Mathlib.Tactic
+import HadwigerNelson.Defs
+
+/-!
+# Unit distance graphs
+
+In this file we reduce plane colorability to the colorability of finite unit distance graphs.
+
+## Main declarations
+
+* `UnitGraph`: structure representing unit distance graphs on the plane.
+* `graph_Colorable_of_planeColorable`: plane colorability implies unit distance graph colorability.
+-/
+
 
 structure UnitGraph.Edge (vertexes : List ℂ) where
   i : Fin vertexes.length
@@ -13,7 +29,7 @@ structure UnitGraph where
 
 namespace UnitGraph
 
-def emtpy (vertexes : List ℂ) : UnitGraph := ⟨vertexes, []⟩
+-- def emtpy (vertexes : List ℂ) : UnitGraph := ⟨vertexes, []⟩
 
 -- def insert (g : UnitGraph) (edge : EdgeType g.vertexes) : UnitGraph := ⟨g.vertexes, edge :: g.edges⟩
 
@@ -28,26 +44,27 @@ def toCompGraph (g : UnitGraph) : CompGraph where
       simp [Prod, unitDistance] at h
   ⟩
 
-def mul (g : UnitGraph) (z : ℂ) (h_unit : ‖z‖ = 1) : UnitGraph where
-  vertexes := g.vertexes.map (· * z)
-  edges := g.edges.map fun ⟨i, j, p⟩ =>
-  ⟨
-    ⟨i.val, by rw [List.length_map _ _]; exact i.isLt⟩,
-    ⟨j.val, by rw [List.length_map _ _]; exact j.isLt⟩, by
-    simp only [unitDistance, Fin.getElem_fin, List.getElem_map] at *
-    rwa [← sub_mul, norm_mul, h_unit, mul_one]
-  ⟩
+-- def mul (g : UnitGraph) (z : ℂ) (h_unit : ‖z‖ = 1) : UnitGraph where
+--   vertexes := g.vertexes.map (· * z)
+--   edges := g.edges.map fun ⟨i, j, p⟩ =>
+--   ⟨
+--     ⟨i.val, by rw [List.length_map _ _]; exact i.isLt⟩,
+--     ⟨j.val, by rw [List.length_map _ _]; exact j.isLt⟩, by
+--     simp only [unitDistance, Fin.getElem_fin, List.getElem_map] at *
+--     rwa [← sub_mul, norm_mul, h_unit, mul_one]
+--   ⟩
 
-def add (g : UnitGraph) (z : ℂ) : UnitGraph where
-  vertexes := g.vertexes.map (· + z)
-  edges := g.edges.map fun ⟨i, j, p⟩ =>
-  ⟨
-    ⟨i.val, by rw [List.length_map _ _]; exact i.isLt⟩,
-    ⟨j.val, by rw [List.length_map _ _]; exact j.isLt⟩, by
-    simp [unitDistance, Fin.getElem_fin, List.getElem_map] at *
-    assumption
-  ⟩
+-- def add (g : UnitGraph) (z : ℂ) : UnitGraph where
+--   vertexes := g.vertexes.map (· + z)
+--   edges := g.edges.map fun ⟨i, j, p⟩ =>
+--   ⟨
+--     ⟨i.val, by rw [List.length_map _ _]; exact i.isLt⟩,
+--     ⟨j.val, by rw [List.length_map _ _]; exact j.isLt⟩, by
+--     simp [unitDistance, Fin.getElem_fin, List.getElem_map] at *
+--     assumption
+--   ⟩
 
+/-- If the plane in `n`-colorable, then any unit distance graph is `n`-colorable. -/
 def graph_Colorable_of_planeColorable {n : ℕ} (h_p_col : planeColorable n) (g : UnitGraph) :
     g.toCompGraph.toSimpleGraph.Colorable n := by
   obtain ⟨val, h_val⟩ := h_p_col
@@ -81,10 +98,8 @@ example : ¬ planeColorable 2 := by
   }
   intro h_p_col
   absurd graph_Colorable_of_planeColorable h_p_col g
-  apply Noncolorable_from_unsat
+  apply Noncolorable_from_unsat _
   dsimp [g, toCompGraph, ColorablilityCNF]
-  apply LitToNat_equisat _
-  clear h_p_col
-  unsat_native_decide
+  unsat_decide
 
 end UnitGraph
