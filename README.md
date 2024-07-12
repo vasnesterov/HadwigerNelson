@@ -5,10 +5,12 @@
 This repo contains a formalized theorem stating that the plane can not be colored such that no two points at distance 1 from each other have the same color. In particular, we verify that 510-vertex graph constructed by Marjin Heule is non-4-colorable.
 
 ## Intallation
-TODO
+1. Install Lean 4, following the instructions [here](https://leanprover-community.github.io/get_started.html).
+2. Install CaDiCaL (SAT solver).
 
 ## Usage
-TODO
+Run `lake exe cache get` to load Mathlib cache, then build the project with `lake build`. 
+Note that it requires about 20GB RAM and 3 hours to build. I hope to speed up it in the future.
 
 ## Proof overview
 We use a standard approach to prove the statement:
