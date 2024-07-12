@@ -2,6 +2,8 @@ import HadwigerNelson.BuildEdges
 
 open CompGraph UnitGraph
 
+set_option sat.timeout 0
+
 example : ¬ planeColorable 3 := by
   let moser := from_vtx "vtx/moser.vtx"
   intro h_p_col
