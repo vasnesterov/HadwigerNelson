@@ -61,13 +61,12 @@ macro_rules
       ))
     )
 
--- TODO: rename me
-def aux (li : List Expr) (type : Expr) : MetaM Expr := do match li with
+def Meta.mkList (li : List Expr) (type : Expr) : MetaM Expr := do match li with
 | .nil => return ← Meta.mkAppOptM ``List.nil #[type]
-| .cons head tail => return ← Meta.mkAppM ``List.cons #[head, (← aux tail type)]
+| .cons head tail => return ← Meta.mkAppM ``List.cons #[head, (← Meta.mkList tail type)]
 
 def UnitGraph.ofVertexes (vertexes : List Expr) : MetaM <| Expr := do
-  let vertexesExpr : Expr := ← aux vertexes q(ℂ)
+  let vertexesExpr : Expr := ← Meta.mkList vertexes q(ℂ)
   let mut edges : List Expr := []
 
   for (u, i) in vertexes.zip (List.finRange vertexes.length) do
@@ -96,38 +95,8 @@ def UnitGraph.ofVertexes (vertexes : List Expr) : MetaM <| Expr := do
         edges := edgeExpr.get! :: edges
 
   dbg_trace s!"Built {edges.length} edges"
-  return mkApp2 (mkConst ``UnitGraph.mk) vertexesExpr (← aux edges (mkApp (mkConst ``UnitGraph.Edge) vertexesExpr))
+  return mkApp2 (mkConst ``UnitGraph.mk) vertexesExpr (← Meta.mkList edges (mkApp (mkConst ``UnitGraph.Edge) vertexesExpr))
 
 elab "from_vtx" s:str : term => do
   let vertexes ← ParseVtx.parseVtxFile s.getString
   return ← UnitGraph.ofVertexes vertexes
-
--- set_option trace.profiler true
-
--- set_option maxHeartbeats 0 in
--- noncomputable def tri : UnitGraph := from_vtx "vtx/test510.vtx"
-
--- noncomputable def a : ℂ := { re := 0, im := 0 }
--- noncomputable def b : ℂ := { re := (-21 - 3 * √5 + 7 * √33 - 3 * √165) / 96, im := (7 * √3 + 21 * √11 - 3 * √15 + 3 * √55) / 96 }
-
--- set_option maxRecDepth 500 in
--- example : unitDistance a b := by
---   unfold a b
---   theta_calc
-
-
-
-
-
-
-
--- open UnitGraph
-
--- example : ¬ planeColorable 2 := by
---   intro h_p_col
---   absurd planeColorable_graph_Colorable h_p_col tri
---   apply Noncolorable_from_unsat
---   dsimp [tri, toCompGraph, CompGraph.ColorablilityCNF]
---   apply LitToNat_equisat _
---   clear h_p_col
---   unsat_native_decide

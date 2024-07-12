@@ -114,7 +114,6 @@ private def triangle : CompGraph where
 -- #eval triangle.ColorablilityCNF 3
 -- #eval liftLitCNF (triangle.ColorablilityCNF 3)
 
-
 example : ¬ triangle.toSimpleGraph.Colorable 2 := by
   apply Noncolorable_from_unsat
   -- decide -- slow
@@ -137,3 +136,5 @@ example : ¬ (CompGraph.complete 10).toSimpleGraph.Colorable 8 := by
   -- decide -- slow
   apply LitToNat_equisat _
   unsat_native_decide
+
+end CompGraph
