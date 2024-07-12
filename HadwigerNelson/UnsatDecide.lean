@@ -81,6 +81,9 @@ elab_rules : tactic
       let t ← inferType cnfExpr
       let cnf ← unsafe evalExpr (CNF ℕ) t cnfExpr
       let res ← runExternal (BVDecide.LratFormula.ofCnf cnf) cfg.solver cfg.lratPath cfg.prevalidate cfg.timeout
-      let cert := res.toOption.get!
-      let proof ← LratCert.toReflectionProofCNF cert cfg cnfExpr ``verifyCert ``verifyCert_correct
-      g.assign proof
+      match res with
+      | .error _ => throwError "SAT solver cannot prove UNSAT"
+      | .ok cert =>
+        -- let cert := res.toOption.get!
+        let proof ← LratCert.toReflectionProofCNF cert cfg cnfExpr ``verifyCert ``verifyCert_correct
+        g.assign proof
