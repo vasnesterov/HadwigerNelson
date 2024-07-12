@@ -13,8 +13,8 @@ example : ¬ planeColorable 3 := by
   apply LitToNat_equisat _
   unsat_native_decide
 
--- set_option maxHeartbeats 0 in
--- set_option maxRecDepth 32000 in
+set_option maxHeartbeats 0 in
+set_option maxRecDepth 32000 in
 theorem plane_non_4_colorable : ¬ planeColorable 4 := by
   let heule := from_vtx "vtx/510_heule.vtx"
   intro h_p_col
