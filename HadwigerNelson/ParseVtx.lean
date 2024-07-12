@@ -52,11 +52,6 @@ def parseVtxFile (vtxPath : System.FilePath) : TermElabM (List Expr) := do
     res := (← parseVertex line) :: res
   return res.reverse
 
--- def aux (li : List Expr) (type : Expr) : MetaM Expr := do match li with
--- | .nil => return ← Meta.mkAppOptM ``List.nil #[type]
--- | .cons head tail => return ← Meta.mkAppM ``List.cons #[head, (← aux tail type)]
-
-
 /-- Creates `List ℂ` from `.vtx` file. -/
 elab "parse_vtx" s:str : term => do
   return ← mkListLit (mkConst ``Complex) (← parseVtxFile s.getString)

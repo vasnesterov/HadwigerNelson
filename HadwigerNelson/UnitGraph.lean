@@ -17,7 +17,6 @@ In this file we reduce plane colorability to the colorability of finite unit dis
 * `graph_Colorable_of_planeColorable`: plane colorability implies unit distance graph colorability.
 -/
 
-
 structure UnitGraph.Edge (vertexes : List ℂ) where
   i : Fin vertexes.length
   j : Fin vertexes.length

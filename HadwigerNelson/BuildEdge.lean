@@ -54,7 +54,7 @@ partial def Real.evalToFloat (x : Expr) : MetaM Float := do
     let x ← Real.evalToFloat args[args.size - 2]!
     let y ← Real.evalToFloat args[args.size - 1]!
     return x / y
-  throwError "can't eval to Float"
+  throwError "cannot eval to Float"
 
 def Complex.evalToFloat (z : Expr) : MetaM (Float × Float) := do
   let x ← Real.evalToFloat z.getAppArgs[0]!
