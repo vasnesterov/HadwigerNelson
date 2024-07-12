@@ -47,9 +47,9 @@ def getDistance (x y : Float × Float) : Float :=
   let b := x.2 - y.2
   a^2 + b^2
 
-syntax "theta_calc" : tactic
+syntax "build_edge" : tactic
 macro_rules
-| `(tactic| theta_calc) =>
+| `(tactic| build_edge) =>
     `(tactic|
       simp [unitDistance, Complex.abs, Complex.normSq];
       repeat (fail_if_no_progress (
@@ -82,10 +82,10 @@ def UnitGraph.ofVertexes (vertexes : List Expr) : MetaM <| Expr := do
       let mvar_p ← Meta.mkFreshExprMVar <| mkApp2 (mkConst ``unitDistance) u v
       let p := mvar_p.mvarId!
       let edgeExpr : Option Expr ← p.withContext do
-        let lolq := Lean.Elab.Tactic.run p (Lean.Elab.Tactic.evalTactic (← `(tactic| theta_calc)))
+        let lolq := Lean.Elab.Tactic.run p (Lean.Elab.Tactic.evalTactic (← `(tactic| build_edge)))
         let qeq := (← lolq.run).fst
         if !qeq.isEmpty then
-          dbg_trace s!"{i} {j}"
+          dbg_trace s!"Cannot prove edge: {i} {j}"
           dbg_trace s!"{(← ppExpr u)}"
           dbg_trace s!"{(← ppExpr v)}"
         if qeq.isEmpty then -- how to better check that the proof is correct?
@@ -95,7 +95,7 @@ def UnitGraph.ofVertexes (vertexes : List Expr) : MetaM <| Expr := do
       if edgeExpr.isSome then
         edges := edgeExpr.get! :: edges
 
-  dbg_trace edges.length
+  dbg_trace s!"Built {edges.length} edges"
   return mkApp2 (mkConst ``UnitGraph.mk) vertexesExpr (← aux edges (mkApp (mkConst ``UnitGraph.Edge) vertexesExpr))
 
 elab "from_vtx" s:str : term => do
