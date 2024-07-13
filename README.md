@@ -20,7 +20,7 @@ We formalize a standard approach to prove the statement:
 
 1. Parse the `.vtx` file containing vertices of the non-4-colorable unit distance graph.
 2. Find unit distance edges between its vertices and prove that they have exactly unit length using an automatic tactic.
-3. Reduce the colorability of the finite graph to the satisfiability of some CNF, then use LeanSAT along with an external SAT solver to prove that the graph is non-4-colorable.
+3. Reduce the colorability of the finite graph to the satisfiability of some CNF, then use [LeanSAT](https://github.com/leanprover/leansat) along with an external SAT solver to prove that the graph is non-4-colorable.
 4. Reduce the colorability of the plane to the colorability of finite unit distance graphs and complete the proof.
 
 ### Building Edges
@@ -30,7 +30,7 @@ To find edges of the graph, we cast vertex coordinates to `Float` and check whet
 Currently, the tactic successfully proves equalities involving numbers that are linear combinations of square roots of naturals over rationals. This is sufficient to build all edges of the 510-vertex Heule graph. Unfortunately, the smallest known non-4-colorable unit distance graph constructed by Jaan Parts is currently beyond the capabilities of `build_edge`, as it contains numbers like `Sqrt[(5*(7 + Sqrt[33]))/2]`.
 
 ## TODO
-
+(PRs are welcome)
 - Prove that the 509-vertex Parts graph is a non-4-colorable unit distance graph.
 - Prove that the plane *is* 7-colorable.
 - Construct the non-4-colorable graph *within* Lean to make the proof shorter and more independent.
