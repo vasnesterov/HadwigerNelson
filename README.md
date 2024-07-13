@@ -1,40 +1,48 @@
-# Hadwiger-Nelson problem formalization in Lean 4
-**Now this work is in progress. I will finish it soon.**
+# Hadwiger-Nelson Problem Formalization in Lean 4
+
+**Note: This work is currently in progress and will be completed soon.**
+
 ## Description
 
-This repo contains a formalized theorem stating that the plane can not be colored such that no two points at distance 1 from each other have the same color. In particular, we verify that 510-vertex graph constructed by Marjin Heule is not 4-colorable. 
+This repository contains a formalized theorem stating that the plane cannot be colored such that no two points at distance 1 from each other have the same color. Specifically, we verify that the 510-vertex graph constructed by Marijn Heule is not 4-colorable.
 
-## Intallation
-1. Install Lean 4, following the instructions [here](https://leanprover-community.github.io/get_started.html).
-2. Install CaDiCaL (SAT solver). You can use a different SAT solver which able to produce LRAT-proofs of unsatisfability with
-```lean
-set_option sat.solver <YOUR_SAT_SOLVER_COMMAND>
-```
+## Installation
+
+1. Install Lean 4 by following the instructions [here](https://leanprover-community.github.io/get_started.html).
+2. Install CaDiCaL (SAT solver). You can use a different SAT solver capable of producing LRAT-proofs of unsatisfiability with:
+
+   ```lean
+   set_option sat.solver <YOUR_SAT_SOLVER_COMMAND>
+   ```
 
 ## Usage
-Run `lake exe cache get` to load Mathlib cache, then build the project with `lake build`. 
-Note that it requires more than 40GB RAM and about 3 hours to build. I hope to speed up it in the future.
 
-## Proof overview
-We use a standard approach to prove the statement:
-1. Parse `.vtx` file containing vertexes of the non-4-colorable unit distance graph.
-2. Find unit distance edges in between its vertexes and prove that they have exactly unit length by some automatic tactic.
-3. Reduce colorability of finite graph to satisfability of some CNF, then use LeanSAT along with external SAT solver to prove that the graph above is non-4-colorable. 
-4. Reduce colorability of the plane to colorability of finite unit distance graphs and finish the proof.
+Run `lake exe cache get` to load the Mathlib cache, then build the project with `lake build`.
 
-### Building edges
-To find edges of the graph we cast vertexes' coordinates to `Float` and check whether distance between two given points are close enough to 1. If so, we run the tactic `build_edge` that combines `norm_num`, `ring_nf` and some extra rewriting of square roots.
+**Note:** The building process requires more than 40GB of RAM and takes approximately 3 hours to complete. We hope to optimize and speed up this process in the future.
 
-So far, the tactic succesfully proves equalities involving numbers which are linear combination of square roots of naturals over rationals. It it enough to build all edges of 510-vertex Heule's graph. Unfortunately, the smallest known non-4-colorable unit distance graph constructed by Jaan Parts is so far beyound of the `build_edge` abilities, because it contains numbers like `Sqrt[(5*(7 + Sqrt[33]))/2]`.
+## Proof Overview
+
+We formalize a standard approach to prove the statement:
+
+1. Parse the `.vtx` file containing vertices of the non-4-colorable unit distance graph.
+2. Find unit distance edges between its vertices and prove that they have exactly unit length using an automatic tactic.
+3. Reduce the colorability of the finite graph to the satisfiability of some CNF, then use LeanSAT along with an external SAT solver to prove that the graph is non-4-colorable.
+4. Reduce the colorability of the plane to the colorability of finite unit distance graphs and complete the proof.
+
+### Building Edges
+
+To find edges of the graph, we cast vertex coordinates to `Float` and check whether the distance between two given points is close enough to 1. If so, we run the `build_edge` tactic that combines `norm_num`, `ring_nf`, and some extra rewriting of square roots.
+
+Currently, the tactic successfully proves equalities involving numbers that are linear combinations of square roots of naturals over rationals. This is sufficient to build all edges of the 510-vertex Heule graph. Unfortunately, the smallest known non-4-colorable unit distance graph constructed by Jaan Parts is currently beyond the capabilities of `build_edge`, as it contains numbers like `Sqrt[(5*(7 + Sqrt[33]))/2]`.
 
 ## TODO
-* Prove that 509-vertex Parts graph is non-4-colorable unit distance graph.
-* Prove that the plane *is* 7-colorable.
-* Construct the non-4-colorable graph *inside* Lean to make the proof shorter and more independent.
-* Speed up the tactic which we use to prove that edges have exactly unit length.
 
-## Acknowledgements
-TODO
-
-## Licence
-TODO
+- Prove that the 509-vertex Parts graph is a non-4-colorable unit distance graph.
+- Prove that the plane *is* 7-colorable.
+- Construct the non-4-colorable graph *within* Lean to make the proof shorter and more independent.
+- Optimize the tactic used to prove that edges have exactly unit length.
+  
+## References
+- The 510-vertex graph by Marijn Heule was obtained from [this repository](https://github.com/marijnheule/CNP-SAT/).
+- The 509-vertex graph by Jaan Parts was sourced from [this Polymath thread](https://dustingmixon.wordpress.com/2019/12/12/polymath16-fifteenth-thread-writing-the-paper-and-chasing-down-loose-ends/).
