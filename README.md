@@ -1,7 +1,5 @@
 # Hadwiger-Nelson Problem Formalization in Lean 4
 
-**Note: This work is currently in progress and will be completed soon.**
-
 ## Description
 
 This repository contains a formalized theorem stating that the plane cannot be colored such that no two points at distance 1 from each other have the same color. Specifically, we verify that the 510-vertex graph constructed by Marijn Heule is not 4-colorable.
@@ -14,12 +12,7 @@ This repository contains a formalized theorem stating that the plane cannot be c
    ```lean
    set_option sat.solver <YOUR_SAT_SOLVER_COMMAND>
    ```
-
-## Usage
-
-Run `lake exe cache get` to load the Mathlib cache, then build the project with `lake build`.
-
-**Note:** The building process requires more than 40GB of RAM and takes approximately 3 hours to complete. We hope to optimize and speed up this process in the future.
+3. Run `lake exe cache get` to load the Mathlib cache, then build the project with `lake build`. The building process requires more than 40GB of RAM and takes approximately 3 hours to complete. Alternatively, you can download oleans from [Dropbox](https://www.dropbox.com/scl/fi/f1gd4gi9dfuse8b1idvki/build.zip?rlkey=vtvfgkfyegzpgu6nhf17jic4e&st=zry5okw0&dl=0), put the content to the `.lake` directory and only then run `lake build`.
 
 ## Proof Overview
 
