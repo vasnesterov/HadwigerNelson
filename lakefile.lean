@@ -1,14 +1,13 @@
 import Lake
 open Lake DSL
 
-package «unit_graph_coloring» where
+package «HadwigerNelson» where
 
 require LeanSAT from git
-  "https://github.com/leanprover/leansat" @ "d26e25db9fe9ab973526e5d70ae38fdc87d084a6"
+  "https://github.com/leanprover/leansat" @ "a1acc2d8339d385aff8064ada34aeec4620fdfea"
 
 require mathlib from git
-  "https://github.com/leanprover-community/mathlib4" @ "nightly-testing-2024-07-03"
-
+  "https://github.com/leanprover-community/mathlib4" @ "nightly-testing-2024-07-11"
 
 @[default_target]
 lean_lib HadwigerNelson
