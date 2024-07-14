@@ -75,8 +75,8 @@ macro_rules
         ring_nf <;>
         norm_num <;>
         (try (rw [← Real.sqrt_mul (by simp)]; norm_num)) <;>
-        factor_sqrt <;>
-        (try (rw [← Real.sqrt_div_self]; norm_num))
+        try simp [reduceSqrt, ← Real.sqrt_div_self]--<;>
+        -- (try (rw [← Real.sqrt_div_self]; norm_num))
       ))
     )
 

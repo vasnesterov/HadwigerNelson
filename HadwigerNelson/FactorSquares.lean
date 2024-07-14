@@ -3,9 +3,12 @@ Copyright (c) 2024 Vasily Nesterov. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Vasily Nesterov
 -/
-import Mathlib.Algebra.Squarefree.Basic
-import Mathlib.Data.Real.Sqrt
 import Mathlib.Tactic.Qify
+import Mathlib.Util.SleepHeartbeats
+import Mathlib.Data.Nat.Squarefree
+import Mathlib.Data.Rat.Star
+import Mathlib.Data.Real.Sqrt
+import Mathlib.Analysis.Normed.Field.Basic
 
 /-!
 # Factoring squares
@@ -179,3 +182,35 @@ macro_rules
 
 example : √8 = 2 * √2 := by
   factor_sqrt
+
+open Lean Meta
+
+theorem sqrt_reduce (nsqrt n' : Nat) : √(Nat.cast (nsqrt ^ 2 * n')) = nsqrt * √n' := by
+  simp
+
+simproc reduceSqrt (Real.sqrt _) := fun e => do
+  let some (n, Rty) ← getOfNatValue? e.appArg! ``Real | return .continue
+  if n == 0 || n == 1 || Squarefree n then return .continue
+  let mut nsqrt := 1
+  let mut n' := 1
+  let mut n'' := n
+  for p in Nat.factors n do
+    let mut multiplicity := 0
+    while n'' % p == 0 do
+      n'' := n'' / p
+      multiplicity := multiplicity + 1
+    nsqrt := nsqrt * p ^ (multiplicity / 2)
+    n' := n' * p ^ (multiplicity % 2)
+  -- now `n'` is squarefree and `n = nsqrt^2 * n'`.
+  -- pf1 is `OfNat.ofNat n = Nat.cast n`
+  let pf1 ← mkEqSymm (← mkAppOptM ``Nat.cast_eq_ofNat #[Rty, toExpr n, none, none])
+  -- pf2 is `√(OfNat.ofNat n) = √(Nat.cast n)`
+  let pf2 ← mkCongrArg (.const ``Real.sqrt []) pf1
+  -- pf3 is `√(Nat.cast (nsqrt ^ 2 * n')) = nsqrt * √n'`
+  let pf3 ← mkAppM ``sqrt_reduce #[toExpr nsqrt, toExpr n']
+  -- pf4 is `√(OfNat.ofNat n) = nsqrt * √n'`
+  let pf4 ← mkEqTrans pf2 pf3
+  let some (_, _, rhs) := (← inferType pf4).eq? | return .continue -- should not fail
+  return .visit { expr := rhs, proof? := pf4 }
+
+example : √12 = 2 * √3 := by simp only [reduceSqrt, Nat.cast_ofNat]
