@@ -2,7 +2,7 @@
 
 ## Description
 
-This repository contains a formalized theorem stating that the plane cannot be colored such that no two points at distance 1 from each other have the same color. Specifically, we verify that the 510-vertex graph constructed by Marijn Heule is not 4-colorable.
+This repository contains a formalized theorem stating that the plane cannot be colored such that no two points at distance 1 from each other have the same color. Specifically, we verify that the 510-vertex graph constructed by Marjin Heule is not 4-colorable.
 
 ## Installation
 
@@ -37,5 +37,5 @@ Currently, the tactic successfully proves equalities involving numbers that are 
 - Optimize the tactic used to prove that edges have exactly unit length.
   
 ## References
-- The 510-vertex graph by Marijn Heule was obtained from [this repository](https://github.com/marijnheule/CNP-SAT/).
+- The 510-vertex graph by Marjin Heule was obtained from [this repository](https://github.com/marijnheule/CNP-SAT/).
 - The 509-vertex graph by Jaan Parts was sourced from [this Polymath thread](https://dustingmixon.wordpress.com/2019/12/12/polymath16-fifteenth-thread-writing-the-paper-and-chasing-down-loose-ends/).
