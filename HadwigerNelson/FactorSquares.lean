@@ -142,7 +142,7 @@ def factorSquares (x : ℕ) : FactorSquaresResult x :=
   if h_nz : x = 0 then
     {
       free := ⟨0, by right; rfl⟩
-      sqrt := 0
+      sqrt := 1
       correct_prod := by simp [h_nz]
     }
   else
@@ -159,58 +159,25 @@ def factorSquares (x : ℕ) : FactorSquaresResult x :=
     }
     factorSquaresImp s
 
-syntax "factor_sqrt_aux" : conv
-
-open Lean Meta Elab Tactic Conv Qq in
-/-- Conversion mode tactic that replaces `x` with `z^2 * y` where `y` is square-free. -/
-elab_rules : conv
-  | `(conv| factor_sqrt_aux) => do
-    let num ← unsafe evalExpr ℕ (mkConst ``Nat) (← getLhs).getAppArgs[1]!
-    let ⟨⟨free, _⟩, sqrt, _⟩ := factorSquares num
-    let freeExpr : Q(ℕ) := toExpr free
-    let sqrtExpr : Q(ℕ) := toExpr sqrt
-    changeLhs <|← mkAppM' (← mkAppOptM ``Nat.cast #[q(ℝ)]) #[q($sqrtExpr^2 * $freeExpr)]
-
-/-- Replaces `√x` with `z * √y` where `y` is square-free and `z` is a square. -/
-syntax "factor_sqrt" : tactic
-macro_rules
-| `(tactic| factor_sqrt) =>
-    `(tactic|
-      (repeat conv in Real.sqrt (OfNat.ofNat _) => congr; factor_sqrt_aux);
-      (repeat rw [Nat.cast_mul, Nat.cast_pow, Real.sqrt_mul, Real.sqrt_sq]) <;> norm_num
-    )
-
-example : √8 = 2 * √2 := by
-  factor_sqrt
-
-open Lean Meta
-
-theorem sqrt_reduce (nsqrt n' : Nat) : √(Nat.cast (nsqrt ^ 2 * n')) = nsqrt * √n' := by
+private lemma factor_sqrt (sqrt free : Nat) : √(Nat.cast (sqrt ^ 2 * free)) = sqrt * √free := by
   simp
 
-simproc reduceSqrt (Real.sqrt _) := fun e => do
+-- from https://leanprover.zulipchat.com/#narrow/stream/287929-mathlib4/topic/Should.20these.20surds.20be.20simplified.20with.20norm_num.3F/near/444362938
+open Lean Meta in
+simproc factorSqrt (Real.sqrt _) := fun e => do
   let some (n, Rty) ← getOfNatValue? e.appArg! ``Real | return .continue
-  if n == 0 || n == 1 || Squarefree n then return .continue
-  let mut nsqrt := 1
-  let mut n' := 1
-  let mut n'' := n
-  for p in Nat.factors n do
-    let mut multiplicity := 0
-    while n'' % p == 0 do
-      n'' := n'' / p
-      multiplicity := multiplicity + 1
-    nsqrt := nsqrt * p ^ (multiplicity / 2)
-    n' := n' * p ^ (multiplicity % 2)
-  -- now `n'` is squarefree and `n = nsqrt^2 * n'`.
+  let ⟨⟨free, _⟩, sqrt, _⟩ := factorSquares n
+
+  if sqrt == 1 then return .continue
   -- pf1 is `OfNat.ofNat n = Nat.cast n`
   let pf1 ← mkEqSymm (← mkAppOptM ``Nat.cast_eq_ofNat #[Rty, toExpr n, none, none])
   -- pf2 is `√(OfNat.ofNat n) = √(Nat.cast n)`
   let pf2 ← mkCongrArg (.const ``Real.sqrt []) pf1
-  -- pf3 is `√(Nat.cast (nsqrt ^ 2 * n')) = nsqrt * √n'`
-  let pf3 ← mkAppM ``sqrt_reduce #[toExpr nsqrt, toExpr n']
+  -- pf3 is `√(Nat.cast (sqrt ^ 2 * free)) = sqrt * √free`
+  let pf3 ← mkAppM ``factor_sqrt #[toExpr sqrt, toExpr free]
   -- pf4 is `√(OfNat.ofNat n) = nsqrt * √n'`
   let pf4 ← mkEqTrans pf2 pf3
   let some (_, _, rhs) := (← inferType pf4).eq? | return .continue -- should not fail
   return .visit { expr := rhs, proof? := pf4 }
 
-example : √12 = 2 * √3 := by simp only [reduceSqrt, Nat.cast_ofNat]
+example : √12 = 2 * √3 := by simp only [factorSqrt, Nat.cast_ofNat]

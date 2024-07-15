@@ -74,7 +74,7 @@ macro_rules
       repeat (fail_if_no_progress (
         ring_nf <;>
         norm_num <;>
-        try simp [FactorSquares.reduceSqrt, ← Real.sqrt_mul, ← Real.sqrt_div_self, -Real.sqrt_mul', -one_div]
+        try simp [FactorSquares.factorSqrt, ← Real.sqrt_mul, ← Real.sqrt_div_self, -Real.sqrt_mul', -one_div]
       ))
     )
 
@@ -100,7 +100,7 @@ def UnitGraph.ofVertexes (vertexes : List Expr) : MetaM <| Expr := do
           dbg_trace s!"Cannot prove edge: {i} {j}"
           dbg_trace s!"{(← ppExpr u)}"
           dbg_trace s!"{(← ppExpr v)}"
-        if qeq.isEmpty then -- how to better check that the proof is correct?
+        if qeq.isEmpty then -- how to better check that the tactic succeeded?
           let proof := (← getExprMVarAssignment? p).get!
           return mkApp4 (mkConst ``UnitGraph.Edge.mk) vertexesExpr finIExpr finJExpr proof
         return none
