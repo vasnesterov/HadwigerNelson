@@ -74,9 +74,7 @@ macro_rules
       repeat (fail_if_no_progress (
         ring_nf <;>
         norm_num <;>
-        (try (rw [← Real.sqrt_mul (by simp)]; norm_num)) <;>
-        try simp [reduceSqrt, ← Real.sqrt_div_self]--<;>
-        -- (try (rw [← Real.sqrt_div_self]; norm_num))
+        try simp [FactorSquares.reduceSqrt, ← Real.sqrt_mul, ← Real.sqrt_div_self, -Real.sqrt_mul', -one_div]
       ))
     )
 
