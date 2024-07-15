@@ -175,7 +175,7 @@ simproc factorSqrt (Real.sqrt _) := fun e => do
   let pf2 ← mkCongrArg (.const ``Real.sqrt []) pf1
   -- pf3 is `√(Nat.cast (sqrt ^ 2 * free)) = sqrt * √free`
   let pf3 ← mkAppM ``factor_sqrt #[toExpr sqrt, toExpr free]
-  -- pf4 is `√(OfNat.ofNat n) = nsqrt * √n'`
+  -- pf4 is `√(OfNat.ofNat n) = sqrt * √free`
   let pf4 ← mkEqTrans pf2 pf3
   let some (_, _, rhs) := (← inferType pf4).eq? | return .continue -- should not fail
   return .visit { expr := rhs, proof? := pf4 }

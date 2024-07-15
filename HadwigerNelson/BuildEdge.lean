@@ -72,7 +72,7 @@ macro_rules
     `(tactic|
       simp [unitDistance, Complex.abs, Complex.normSq];
       repeat (fail_if_no_progress (
-        ring_nf <;>
+        ring_nf;
         try simp [FactorSquares.factorSqrt, ← Real.sqrt_mul, ← Real.sqrt_div_self, -Real.sqrt_mul', -one_div]
       ))
     )
