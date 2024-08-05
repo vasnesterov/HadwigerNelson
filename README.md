@@ -2,7 +2,7 @@
 
 ## Description
 
-This repository contains a formalized theorem stating that the plane cannot be colored such that no two points at distance 1 from each other have the same color. Specifically, we verify that the 510-vertex graph constructed by Marjin Heule is not 4-colorable.
+This repository contains a formalized theorem stating that the plane cannot be colored using 4 colors such that no two points at distance 1 from each other have the same color. Specifically, we verify that the 510-vertex graph constructed by Marjin Heule is not 4-colorable.
 
 ## Installation
 
