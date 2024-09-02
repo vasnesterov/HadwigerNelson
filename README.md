@@ -25,7 +25,7 @@ We formalize a standard approach to prove the statement:
 
 ### Building Edges
 
-To find edges of the graph, we cast vertex coordinates to `Float` and check whether the distance between two given points is close enough to 1. If so, we run the `build_edge` tactic that combines `norm_num`, `ring_nf`, and some extra rewriting of square roots.
+To find edges of the graph, we cast vertex coordinates to `Float` and check whether the distance between two given points is close enough to 1. If so, we run the `build_edge` tactic that combines `ring_nf` and some extra rewriting of square roots.
 
 Currently, the tactic successfully proves equalities involving numbers that are linear combinations of square roots of naturals over rationals. This is sufficient to build all edges of the 510-vertex Heule graph. Unfortunately, the smallest known non-4-colorable unit distance graph constructed by Jaan Parts is currently beyond the capabilities of `build_edge`, as it contains numbers like `Sqrt[(5*(7 + Sqrt[33]))/2]`.
 
